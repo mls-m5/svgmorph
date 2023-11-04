@@ -1,7 +1,9 @@
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
+#include <string>
 #include <vector>
 
 constexpr auto helpStr = R"(
@@ -11,7 +13,8 @@ usage
 
 options
 --profile            Enable profiling
---capture [file]     Save screen to video file
+--subframes          Set number of frames to interpolate between
+--out                Set output filename
 )";
 
 // Regular expression for matching integers and floating-point numbers
@@ -20,6 +23,8 @@ const std::regex numberPattern(R"([-+]?[0-9]*\.?[0-9]+)");
 struct Settings {
     std::vector<std::filesystem::path> files;
     bool shouldEnableProfiling = false;
+    int subframes = 10;
+    std::filesystem::path outFilename = "out.svg";
 
     Settings(int argc, char **argv) {
         auto args = std::vector<std::string>(argv + 1, argv + argc);
@@ -32,6 +37,9 @@ struct Settings {
             else if (arg == "--help" || arg == "-h") {
                 std::cout << helpStr << std::endl;
                 std::exit(0);
+            }
+            else if (arg == "--subframes") {
+                subframes = std::stoi(args.at(++i));
             }
             else {
                 files.push_back(arg);
@@ -68,31 +76,6 @@ std::vector<std::string> extractNumbers(const std::string &input) {
     return numbers;
 }
 
-// std::string replaceNumbersWithString(const std::string& text, const
-// std::vector<std::string>& replacements) {
-//     std::regex numberRegex("(\\d+)"); // Match one or more digits
-
-//    auto replacementsIterator = replacements.begin();
-
-//           // Marking the lambda as mutable to modify the captures
-//    auto numberReplacer = [&replacementsIterator, &replacements](const
-//    std::smatch& match) mutable -> std::string {
-//        if (replacementsIterator != replacements.end()) {
-//            // Get the replacement string
-//            std::string replacement = *replacementsIterator;
-//            // Move to the next replacement
-//            ++replacementsIterator;
-//            return replacement;
-//        } else {
-//            // If we run out of replacements, just return the match
-//            return match[0];
-//        }
-//    };
-
-//           // This will call numberReplacer for each match and use its return
-//           value as the replacement
-//    return std::regex_replace(text, numberRegex, numberReplacer);
-//}
 std::string replaceNumbersWithString(
     const std::string &text, const std::vector<std::string> &replacements) {
     //    std::regex numberRegex("(\\d+)"); // Match one or more digits
@@ -125,6 +108,31 @@ std::string replaceNumbersWithString(
     return result;
 }
 
+std::string interpolateNumber(std::string a, std::string b, float amount) {
+    if (a == b) {
+        return a;
+    }
+    auto vA = std::stod(a);
+    auto vB = std::stod(b);
+
+    return std::to_string(std::lerp(vA, vB, amount));
+}
+
+std::vector<std::string> interpolate(const std::vector<std::string> a,
+                                     const std::vector<std::string> b,
+                                     float amount) {
+    auto ret = std::vector<std::string>{};
+    for (size_t i = 0; i < std::min(a.size(), b.size()); ++i) {
+        ret.push_back(interpolateNumber(a.at(i), b.at(i), amount));
+    }
+    return ret;
+}
+
+std::filesystem::path createOutFilename(std::filesystem::path base, int i) {
+    return base.parent_path() / (base.stem().string() + std::to_string(i) +
+                                 base.extension().string());
+}
+
 int main(int argc, char *argv[]) {
     const auto settings = Settings{argc, argv};
     std::cout << "files :\n";
@@ -132,17 +140,25 @@ int main(int argc, char *argv[]) {
         std::cout << file << "\n";
     }
 
-    auto content = readFile(settings.files.front());
-    std::cout << content << "\n";
-
-    auto numbers = extractNumbers(content);
-
-    for (auto &n : numbers) {
-        std::cout << "number: " << n << "\n";
-        n = std::to_string(42);
+    if (settings.files.size() < 2) {
+        std::cerr << "need at least 2 files to interpolate between\n";
+        std::exit(1);
     }
 
-    std::cout << replaceNumbersWithString(content, numbers);
+    auto contentA = readFile(settings.files.front());
+    auto contentB = readFile(settings.files.at(1));
+
+    auto numbersA = extractNumbers(contentA);
+    auto numbersB = extractNumbers(contentB);
+
+    for (int i = 0; i < settings.subframes; ++i) {
+        auto t = 1.f / settings.subframes * i;
+        auto numbers = interpolate(numbersA, numbersB, t);
+        auto file = std::ofstream{createOutFilename(settings.outFilename, i)};
+        file << replaceNumbersWithString(contentA, numbers);
+    }
+
+    //    std::cout << replaceNumbersWithString(contentA, numbersA);
 
     return 0;
 }
