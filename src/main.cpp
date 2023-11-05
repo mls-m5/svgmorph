@@ -17,9 +17,6 @@ options
 --out -o             Set output filename
 )";
 
-// Regular expression for matching integers and floating-point numbers
-const std::regex numberPattern(R"([-+]?[0-9]*\.?[0-9]+)");
-
 struct Settings {
     std::vector<std::filesystem::path> files;
     bool shouldEnableProfiling = false;
@@ -61,6 +58,9 @@ std::string readFile(std::filesystem::path path) {
     buffer << file.rdbuf();
     return buffer.str();
 }
+
+// Regular expression for matching integers and floating-point numbers
+const std::regex numberPattern(R"([-+]?[0-9]*\.?[0-9]+)");
 
 std::vector<std::string> extractNumbers(const std::string &input) {
     auto numbersBegin =
@@ -123,9 +123,53 @@ std::filesystem::path createOutFilename(std::filesystem::path base, int i) {
                                  base.extension().string());
 }
 
+void createVideo(std::filesystem::path base,
+                 std::vector<std::filesystem::path> files) {
+    base.replace_extension(".mp4");
+
+    auto listPath = std::string{"/tmp/sthaotsehu-video-list.txt"};
+
+    {
+        auto file = std::ofstream{listPath};
+        for (auto &path : files) {
+            file << "file '" << path.string() << "'\n";
+        }
+    }
+
+    std::filesystem::remove(base);
+
+    {
+        auto command = "ffmpeg -f concat -safe 0 -r 24 -i " + listPath +
+                       " -c:v libx264rgb -crf 18 -preset ultrafast -loglevel "
+                       "error -stats " +
+                       base.string();
+
+        std::system(command.c_str());
+    }
+
+    {
+        auto firstFrame = base;
+        firstFrame.replace_extension("-first.png");
+
+        auto command = "inkscape  " + files.front().string() + " -o " +
+                       firstFrame.string();
+
+        std::system(command.c_str());
+    }
+    {
+        auto lastFrame = base;
+        lastFrame.replace_extension("-last.png");
+
+        auto command =
+            "inkscape " + files.back().string() + " -o " + lastFrame.string();
+
+        std::system(command.c_str());
+    }
+}
+
 int main(int argc, char *argv[]) {
     const auto settings = Settings{argc, argv};
-    std::cout << "files :\n";
+    std::cout << "files:\n";
     for (auto &file : settings.files) {
         std::cout << file << "\n";
     }
@@ -141,6 +185,8 @@ int main(int argc, char *argv[]) {
     auto numbersA = extractNumbers(contentA);
     auto numbersB = extractNumbers(contentB);
 
+    auto files = std::vector<std::filesystem::path>{};
+
     for (int i = 0; i <= settings.subframes; ++i) {
         auto t = 1.f / settings.subframes * i;
         auto numbers = interpolate(numbersA, numbersB, t);
@@ -148,7 +194,12 @@ int main(int argc, char *argv[]) {
         std::cout << "write to " << path << "\n";
         auto file = std::ofstream{path};
         file << replaceNumbers(contentA, numbers);
+        files.push_back(path);
     }
+
+    std::cout << "encoding video..." << std::endl;
+
+    createVideo(settings.outFilename, files);
 
     std::cout << "done...\n";
 
