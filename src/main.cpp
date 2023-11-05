@@ -85,7 +85,8 @@ std::vector<std::string> extractNumbers(const std::string &input) {
 
     return numbers;
 }
-// end
+// end extract
+// block 17
 
 std::string replaceNumbers(const std::string &text,
                            const std::vector<std::string> &replacements) {
@@ -109,6 +110,7 @@ std::string replaceNumbers(const std::string &text,
     result += std::string(searchStart, text.cend());
     return result;
 }
+// end
 // block 12
 
 std::string interpolateNumber(std::string a, std::string b, float amount) {
@@ -140,6 +142,7 @@ std::filesystem::path createOutFilename(std::filesystem::path base, int i) {
                                  base.extension().string());
 }
 // end
+// block 19
 
 void createVideo(std::filesystem::path base,
                  std::vector<std::filesystem::path> files) {
@@ -184,7 +187,9 @@ void createVideo(std::filesystem::path base,
         std::system(command.c_str());
     }
 }
+// end
 // 1
+
 int main(int argc, char *argv[]) { // 1
     // block mainA 6
     const auto settings = Settings{argc, argv};
@@ -212,15 +217,16 @@ int main(int argc, char *argv[]) { // 1
     auto files = std::vector<std::filesystem::path>{};
 
     for (int i = 0; i <= settings.subframes; ++i) {
-        auto t = 1.f / settings.subframes * i;             // 14
-        auto numbers = interpolate(numbersA, numbersB, t); // 14
-        auto path = createOutFilename(settings.outFilename, i);
-        std::cout << "write to " << path << "\n";
-        auto file = std::ofstream{path};
-        file << replaceNumbers(contentA, numbers);
-        files.push_back(path);
+        auto t = 1.f / settings.subframes * i;                  // 14
+        auto numbers = interpolate(numbersA, numbersB, t);      // 14
+        auto path = createOutFilename(settings.outFilename, i); // 16
+        std::cout << "write to " << path << "\n";               // 16
+        auto file = std::ofstream{path};                        // 16
+        file << replaceNumbers(contentA, numbers);              // 18
+        files.push_back(path);                                  // 18
     }
     // end loop
+    // block 20
 
     std::cout << "encoding video..." << std::endl;
 
@@ -228,6 +234,7 @@ int main(int argc, char *argv[]) { // 1
 
     std::cout << "done...\n";
 
-    return 0;
+    // end
+    return 0; // 1
 } // 1
   // 1
