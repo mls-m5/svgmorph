@@ -14,7 +14,7 @@ usage
 options
 --profile            Enable profiling
 --subframes          Set number of frames to interpolate between
---out                Set output filename
+--out -o             Set output filename
 )";
 
 // Regular expression for matching integers and floating-point numbers
@@ -41,6 +41,9 @@ struct Settings {
             else if (arg == "--subframes") {
                 subframes = std::stoi(args.at(++i));
             }
+            else if (arg == "--out" || arg == "-o") {
+                outFilename = args.at(++i);
+            }
             else {
                 files.push_back(arg);
             }
@@ -49,62 +52,49 @@ struct Settings {
 };
 
 std::string readFile(std::filesystem::path path) {
-    std::ifstream file(path);
+    auto file = std::ifstream{path};
     if (!file.is_open()) {
-        std::cerr << "Could not open the file - '" << path << "'" << std::endl;
-        return "";
+        std::cerr << "Could not open the file - '" << path << "'\n";
+        std::exit(1);
     }
-    std::stringstream buffer;
+    auto buffer = std::stringstream{};
     buffer << file.rdbuf();
     return buffer.str();
 }
 
 std::vector<std::string> extractNumbers(const std::string &input) {
+    auto numbersBegin =
+        std::sregex_iterator{input.begin(), input.end(), numberPattern};
+    auto numbersEnd = std::sregex_iterator{};
 
-    // Using std::sregex_iterator to apply the pattern
-    std::sregex_iterator numbersBegin =
-        std::sregex_iterator(input.begin(), input.end(), numberPattern);
-    std::sregex_iterator numbersEnd = std::sregex_iterator();
-
-    // Iterate over all matches and store them in the vector
-    std::vector<std::string> numbers;
-    for (std::sregex_iterator it = numbersBegin; it != numbersEnd; ++it) {
-        std::smatch match = *it;
-        numbers.push_back(match.str());
+    auto numbers = std::vector<std::string>{};
+    for (auto it = numbersBegin; it != numbersEnd; ++it) {
+        numbers.push_back(it->str());
     }
 
     return numbers;
 }
 
-std::string replaceNumbersWithString(
-    const std::string &text, const std::vector<std::string> &replacements) {
-    //    std::regex numberRegex("(\\d+)"); // Match one or more digits
+std::string replaceNumbers(const std::string &text,
+                           const std::vector<std::string> &replacements) {
 
-    std::string result;
+    auto result = std::string{};
     auto replacementsIterator = replacements.begin();
+    auto searchStart = text.cbegin();
+    auto match = std::smatch{};
 
-    std::string::const_iterator searchStart = text.cbegin();
-    std::smatch match;
     while (std::regex_search(searchStart, text.cend(), match, numberPattern)) {
         result += match.prefix().str(); // Add the text before the match
-
-        // Replace the match with the next replacement string, or with the match
-        // itself if there are no more replacements
         if (replacementsIterator != replacements.end()) {
             result += *replacementsIterator++;
         }
         else {
             result += match.str();
         }
-
-        searchStart =
-            match.suffix()
-                .first; // Continue searching from the end of the match
+        searchStart = match.suffix().first;
     }
 
-    result +=
-        std::string(searchStart,
-                    text.cend()); // Add the remaining text after the last match
+    result += std::string(searchStart, text.cend());
     return result;
 }
 
@@ -151,14 +141,16 @@ int main(int argc, char *argv[]) {
     auto numbersA = extractNumbers(contentA);
     auto numbersB = extractNumbers(contentB);
 
-    for (int i = 0; i < settings.subframes; ++i) {
+    for (int i = 0; i <= settings.subframes; ++i) {
         auto t = 1.f / settings.subframes * i;
         auto numbers = interpolate(numbersA, numbersB, t);
-        auto file = std::ofstream{createOutFilename(settings.outFilename, i)};
-        file << replaceNumbersWithString(contentA, numbers);
+        auto path = createOutFilename(settings.outFilename, i);
+        std::cout << "write to " << path << "\n";
+        auto file = std::ofstream{path};
+        file << replaceNumbers(contentA, numbers);
     }
 
-    //    std::cout << replaceNumbersWithString(contentA, numbersA);
+    std::cout << "done...\n";
 
     return 0;
 }
