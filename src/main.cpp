@@ -5,6 +5,7 @@
 #include <regex>
 #include <string>
 #include <vector>
+// block 5
 
 constexpr auto helpStr = R"(
 usage
@@ -16,12 +17,17 @@ options
 --subframes          Set number of frames to interpolate between
 --out -o             Set output filename
 )";
+// end
+// block 2
 
 struct Settings {
+    // block settingsinner 3
     std::vector<std::filesystem::path> files;
     bool shouldEnableProfiling = false;
     int subframes = 10;
     std::filesystem::path outFilename = "out.svg";
+    // end settingsinner
+    // block se 4
 
     Settings(int argc, char **argv) {
         auto args = std::vector<std::string>(argv + 1, argv + argc);
@@ -46,7 +52,10 @@ struct Settings {
             }
         }
     }
+    // end se
 };
+// end
+// block read 7
 
 std::string readFile(std::filesystem::path path) {
     auto file = std::ifstream{path};
@@ -58,6 +67,8 @@ std::string readFile(std::filesystem::path path) {
     buffer << file.rdbuf();
     return buffer.str();
 }
+// end read
+// block extract 9
 
 // Regular expression for matching integers and floating-point numbers
 const std::regex numberPattern(R"([-+]?[0-9]*\.?[0-9]+)");
@@ -74,6 +85,7 @@ std::vector<std::string> extractNumbers(const std::string &input) {
 
     return numbers;
 }
+// end
 
 std::string replaceNumbers(const std::string &text,
                            const std::vector<std::string> &replacements) {
@@ -97,6 +109,7 @@ std::string replaceNumbers(const std::string &text,
     result += std::string(searchStart, text.cend());
     return result;
 }
+// block 12
 
 std::string interpolateNumber(std::string a, std::string b, float amount) {
     if (a == b) {
@@ -107,6 +120,8 @@ std::string interpolateNumber(std::string a, std::string b, float amount) {
 
     return std::to_string(std::lerp(vA, vB, amount));
 }
+// end
+// block 13
 
 std::vector<std::string> interpolate(const std::vector<std::string> a,
                                      const std::vector<std::string> b,
@@ -117,11 +132,14 @@ std::vector<std::string> interpolate(const std::vector<std::string> a,
     }
     return ret;
 }
+// end
+// block 15
 
 std::filesystem::path createOutFilename(std::filesystem::path base, int i) {
     return base.parent_path() / (base.stem().string() + std::to_string(i) +
                                  base.extension().string());
 }
+// end
 
 void createVideo(std::filesystem::path base,
                  std::vector<std::filesystem::path> files) {
@@ -166,8 +184,9 @@ void createVideo(std::filesystem::path base,
         std::system(command.c_str());
     }
 }
-
-int main(int argc, char *argv[]) {
+// 1
+int main(int argc, char *argv[]) { // 1
+    // block mainA 6
     const auto settings = Settings{argc, argv};
     std::cout << "files:\n";
     for (auto &file : settings.files) {
@@ -178,24 +197,30 @@ int main(int argc, char *argv[]) {
         std::cerr << "need at least 2 files to interpolate between\n";
         std::exit(1);
     }
+    // end mainA
+    // block 8
 
     auto contentA = readFile(settings.files.front());
     auto contentB = readFile(settings.files.at(1));
+    // end
+    // block 10
 
     auto numbersA = extractNumbers(contentA);
     auto numbersB = extractNumbers(contentB);
-
+    // end
+    // block loop 11
     auto files = std::vector<std::filesystem::path>{};
 
     for (int i = 0; i <= settings.subframes; ++i) {
-        auto t = 1.f / settings.subframes * i;
-        auto numbers = interpolate(numbersA, numbersB, t);
+        auto t = 1.f / settings.subframes * i;             // 14
+        auto numbers = interpolate(numbersA, numbersB, t); // 14
         auto path = createOutFilename(settings.outFilename, i);
         std::cout << "write to " << path << "\n";
         auto file = std::ofstream{path};
         file << replaceNumbers(contentA, numbers);
         files.push_back(path);
     }
+    // end loop
 
     std::cout << "encoding video..." << std::endl;
 
@@ -204,4 +229,5 @@ int main(int argc, char *argv[]) {
     std::cout << "done...\n";
 
     return 0;
-}
+} // 1
+  // 1
