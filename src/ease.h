@@ -5,6 +5,7 @@
 
 enum class EaseType {
     Linear,
+    Exp,
     Sine,
     Elastic,
     Bouncy,
@@ -16,12 +17,20 @@ inline float easeLinear(float t) {
     return t;
 }
 
+inline float easeExp(float t) {
+    static const auto multiplier = 2.f;
+    static const auto min = std::exp(-1 * multiplier);
+    static const auto rangeInv = 1.f / (1.f - min);
+    auto ret = (std::exp(-t * multiplier) - min) * rangeInv;
+    return (1.f - ret);
+}
+
 inline float easeSine(float t) {
     return .5f - std::cos(pi * t) * .5f;
 }
 
 inline float easeElastic(float t) {
-    return (1.f - std::cos(pi * 5.f * t) * (1.f - t));
+    return (1.f - std::cos(pi * 5.f * t) * (1.f - easeExp(t)));
 }
 
 inline float easeBouncy(float t) {
@@ -33,6 +42,8 @@ std::function<float(float)> ease(EaseType type) {
     switch (type) {
     case T::Linear:
         return easeLinear;
+    case T::Exp:
+        return easeExp;
     case T::Sine:
         return easeSine;
     case T::Elastic:
@@ -51,6 +62,9 @@ inline EaseType stringToEaseType(std::string_view str) {
     }
     if (str == "elastic") {
         return T::Elastic;
+    }
+    if (str == "exp") {
+        return T::Exp;
     }
     if (str == "bouncy" || str == "bounce") {
         return T::Bouncy;

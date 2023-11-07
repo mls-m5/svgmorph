@@ -12,7 +12,7 @@ void showGraph(EaseType type) {
               << std::setw(static_cast<int>(width - 1)) << "+\n";
     for (float x = 0.f; x <= 1.f; x += 1.f / len) {
         std::cout << std::setfill(' ')
-                  << std::setw(static_cast<int>(f(x) * width + .5f)) << "x\n";
+                  << std::setw(static_cast<int>(f(x) * width + 1.5f)) << "x\n";
     }
 }
 
@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
     for (auto type : {
              EaseType::Linear,
              EaseType::Sine,
+             EaseType::Exp,
              EaseType::Elastic,
              EaseType::Bouncy,
          }) {
