@@ -17,15 +17,15 @@ inline float easeLinear(float t) {
 }
 
 inline float easeSine(float t) {
-    return .5f - std::cos(pi);
+    return .5f - std::cos(pi * t);
 }
 
 inline float easeElastic(float t) {
-    return .5f - std::cos(pi) * 10.f * (1.f - t);
+    return (.5f - std::cos(pi * 5.f) * .5f) * (1.f - t);
 }
 
 inline float easeBouncy(float t) {
-    return .5f - std::abs(std::cos(pi) * 10.f * (1.f - t));
+    return std::abs(easeElastic(t));
 }
 
 std::function<float(float)> ease(EaseType type) {
@@ -49,10 +49,10 @@ inline EaseType stringToEaseType(std::string_view str) {
     if (str == "sine") {
         return T::Sine;
     }
-    if (str == "Elastic") {
+    if (str == "elastic") {
         return T::Elastic;
     }
-    if (str == "Bouncy") {
+    if (str == "bouncy" || str == "bounce") {
         return T::Bouncy;
     }
     return T::Linear;
