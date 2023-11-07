@@ -159,7 +159,8 @@ void createVideo(std::filesystem::path base,
     {
         auto file = std::ofstream{listPath};
         for (auto &path : files) {
-            file << "file '" << path.string() << "'\n";
+            file << "file '" << std::filesystem::absolute(path).string()
+                 << "'\n";
         }
     }
 

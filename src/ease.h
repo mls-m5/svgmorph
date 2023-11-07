@@ -17,15 +17,15 @@ inline float easeLinear(float t) {
 }
 
 inline float easeSine(float t) {
-    return .5f - std::cos(pi * t);
+    return .5f - std::cos(pi * t) * .5f;
 }
 
 inline float easeElastic(float t) {
-    return (.5f - std::cos(pi * 5.f) * .5f) * (1.f - t);
+    return (1.f - std::cos(pi * 5.f * t) * (1.f - t));
 }
 
 inline float easeBouncy(float t) {
-    return std::abs(easeElastic(t));
+    return 1.f - std::abs(1.f - easeElastic(t));
 }
 
 std::function<float(float)> ease(EaseType type) {
