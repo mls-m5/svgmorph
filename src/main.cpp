@@ -1,3 +1,4 @@
+#include "ease.h" // 21
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -16,6 +17,7 @@ options
 --profile            Enable profiling
 --subframes          Set number of frames to interpolate between
 --out -o             Set output filename
+--ease -e            Set ease function, linear, sine, elastic, bouncy // 24
 )";
 // end
 // block 2
@@ -26,6 +28,7 @@ struct Settings {
     bool shouldEnableProfiling = false;
     int subframes = 10;
     std::filesystem::path outFilename = "out.svg";
+    std::function<float(float)> ease = easeLinear; // 22
     // end settingsinner
     // block se 4
 
@@ -46,6 +49,9 @@ struct Settings {
             }
             else if (arg == "--out" || arg == "-o") {
                 outFilename = args.at(++i);
+            }
+            else if (arg == "--ease" || arg == "-e") {
+                ease = ::ease(args.at(++i)); // 23
             }
             else {
                 files.push_back(arg);
@@ -217,13 +223,14 @@ int main(int argc, char *argv[]) { // 1
     auto files = std::vector<std::filesystem::path>{};
 
     for (int i = 0; i <= settings.subframes; ++i) {
-        auto t = 1.f / settings.subframes * i;                  // 14
-        auto numbers = interpolate(numbersA, numbersB, t);      // 14
-        auto path = createOutFilename(settings.outFilename, i); // 16
-        std::cout << "write to " << path << "\n";               // 16
-        auto file = std::ofstream{path};                        // 16
-        file << replaceNumbers(contentA, numbers);              // 18
-        files.push_back(path);                                  // 18
+        auto t = 1.f / settings.subframes * i; // 14
+        // auto numbers = interpolate(numbersA, numbersB, t); // 14-22
+        auto numbers = interpolate(numbersA, numbersB, settings.ease(t)); // 25
+        auto path = createOutFilename(settings.outFilename, i);           // 16
+        std::cout << "write to " << path << "\n";                         // 16
+        auto file = std::ofstream{path};                                  // 16
+        file << replaceNumbers(contentA, numbers);                        // 18
+        files.push_back(path);                                            // 18
     }
     // end loop
     // block 20
