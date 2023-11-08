@@ -1,4 +1,5 @@
 #include "ease.h" // 21
+#include "tmppath.h"
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -143,9 +144,9 @@ std::vector<std::string> interpolate(const std::vector<std::string> a,
 // end
 // block 15
 
-std::filesystem::path createOutFilename(std::filesystem::path base, int i) {
-    return base.parent_path() / (base.stem().string() + std::to_string(i) +
-                                 base.extension().string());
+std::filesystem::path createTempOutFilename(std::filesystem::path base, int i) {
+    static auto tmpPath = TmpPath{};
+    return tmpPath / (base.stem().string() + std::to_string(i) + ".svg");
 }
 // end
 // block 19
@@ -227,7 +228,7 @@ int main(int argc, char *argv[]) { // 1
         auto t = 1.f / settings.subframes * i; // 14
         // auto numbers = interpolate(numbersA, numbersB, t); // 14-22
         auto numbers = interpolate(numbersA, numbersB, settings.ease(t)); // 25
-        auto path = createOutFilename(settings.outFilename, i);           // 16
+        auto path = createTempOutFilename(settings.outFilename, i);       // 16
         std::cout << "write to " << path << "\n";                         // 16
         auto file = std::ofstream{path};                                  // 16
         file << replaceNumbers(contentA, numbers);                        // 18
@@ -239,6 +240,10 @@ int main(int argc, char *argv[]) { // 1
     std::cout << "encoding video..." << std::endl;
 
     createVideo(settings.outFilename, files);
+
+    for (auto &path : files) {
+        std::filesystem::remove(path);
+    }
 
     std::cout << "done...\n";
 

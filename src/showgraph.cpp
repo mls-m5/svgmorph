@@ -1,5 +1,6 @@
 #include "ease.h"
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -85,7 +86,7 @@ void createGraph(EaseType type, int n) {
 
     const auto values = std::vector<std::pair<std::string, std::string>>{
         {"width", std::to_string(10)},
-        {"height", std::to_string(static_cast<int>(10 * max + 1))},
+        {"height", std::to_string(static_cast<int>(10 * height + 1))},
         {"min", std::to_string(min)},
         {"max", std::to_string(max)},
         {"line", std::move(coordStr)},
