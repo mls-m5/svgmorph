@@ -144,9 +144,9 @@ std::vector<std::string> interpolate(const std::vector<std::string> a,
 // end
 // block 15
 
+static auto tmpPath = TmpPath{};
 std::filesystem::path createTempOutFilename(std::filesystem::path base, int i) {
-    static auto tmpPath = TmpPath{};
-    return tmpPath / (base.stem().string() + std::to_string(i) + ".svg");
+    return tmpPath / (base.stem().string() + "-" + std::to_string(i) + ".svg");
 }
 // end
 // block 19
@@ -157,7 +157,7 @@ void createVideo(std::filesystem::path base,
 
     std::cout << "encoding video " << base << std::endl;
 
-    auto listPath = std::string{"/tmp/sthaotsehu-video-list.txt"};
+    auto listPath = std::string{tmpPath / "sthaotsehu-video-list.txt"};
 
     {
         auto file = std::ofstream{listPath};

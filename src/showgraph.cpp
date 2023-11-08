@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct Coord {
     float x = 0;
@@ -122,6 +124,8 @@ int main(int argc, char *argv[]) {
         paths.push_back(path);
     }
 
+    auto futures = std::vector<std::future<void>>{};
+
     for (size_t i = 1; i < paths.size(); ++i) {
         auto a = paths.at(i - 1);
         auto b = paths.at(i);
@@ -131,7 +135,9 @@ int main(int argc, char *argv[]) {
         ss << " " << a << " " << b;
         auto command = ss.str();
         std::cout << command << std::endl;
-        std::system(command.c_str());
+
+        futures.push_back(
+            std::async([command] { std::system(command.c_str()); }));
     }
     return 0;
 }
