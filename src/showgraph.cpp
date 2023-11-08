@@ -68,7 +68,7 @@ std::string createString(const std::vector<Coord> &coordinates) {
     return ss.str();
 }
 
-void createGraph(EaseType type, int n) {
+std::filesystem::path createGraph(EaseType type, int n) {
     auto svg = readFile("data/graphtemplate.svg");
 
     auto coords = createCoords(type);
@@ -96,11 +96,18 @@ void createGraph(EaseType type, int n) {
         svg = replace(svg, "{" + v.first + "}", v.second);
     }
 
-    std::ofstream{"graph-out" + std::to_string(n) + ".svg"} << svg;
-    std::cout << svg;
+    auto path = "graph-out" + std::to_string(n) + ".svg";
+
+    std::ofstream{path} << svg;
+    //    std::cout << svg;
+
+    return path;
 }
 
 int main(int argc, char *argv[]) {
+
+    auto paths = std::vector<std::filesystem::path>{};
+
     for (auto type : {
              EaseType::Linear,
              EaseType::Sine,
@@ -111,8 +118,20 @@ int main(int argc, char *argv[]) {
         std::cout << "type " << static_cast<int>(type) << "\n";
 
         showGraph(type);
-        createGraph(type, static_cast<int>(type));
+        auto path = createGraph(type, static_cast<int>(type));
+        paths.push_back(path);
     }
 
+    for (size_t i = 1; i < paths.size(); ++i) {
+        auto a = paths.at(i - 1);
+        auto b = paths.at(i);
+        auto ss = std::ostringstream{};
+        ss << "./svgmorph --subframes 30";
+        ss << " --ease " << typeToStr(static_cast<EaseType>(i));
+        ss << " " << a << " " << b;
+        auto command = ss.str();
+        std::cout << command << std::endl;
+        std::system(command.c_str());
+    }
     return 0;
 }

@@ -28,7 +28,7 @@ struct Settings {
     std::vector<std::filesystem::path> files;
     bool shouldEnableProfiling = false;
     int subframes = 10;
-    std::filesystem::path outFilename = "out.svg";
+    std::filesystem::path outFilename = "";
     std::function<float(float)> ease = easeLinear; // 22
     // end settingsinner
     // block se 4
@@ -155,6 +155,8 @@ void createVideo(std::filesystem::path base,
                  std::vector<std::filesystem::path> files) {
     base.replace_extension(".mp4");
 
+    std::cout << "encoding video " << base << std::endl;
+
     auto listPath = std::string{"/tmp/sthaotsehu-video-list.txt"};
 
     {
@@ -196,26 +198,13 @@ void createVideo(std::filesystem::path base,
     }
 }
 // end
-// 1
+// block interpolate 8
+void interpolateSvgs(std::filesystem::path a,
+                     std::filesystem::path b,
+                     const Settings &settings) {
 
-int main(int argc, char *argv[]) { // 1
-    // block mainA 6
-    const auto settings = Settings{argc, argv};
-    std::cout << "files:\n";
-    for (auto &file : settings.files) {
-        std::cout << file << "\n";
-    }
-
-    if (settings.files.size() < 2) {
-        std::cerr << "need at least 2 files to interpolate between\n";
-        std::exit(1);
-    }
-    // end mainA
-    // block 8
-
-    auto contentA = readFile(settings.files.front());
-    auto contentB = readFile(settings.files.at(1));
-    // end
+    auto contentA = readFile(a);
+    auto contentB = readFile(b);
     // block 10
 
     auto numbersA = extractNumbers(contentA);
@@ -228,7 +217,7 @@ int main(int argc, char *argv[]) { // 1
         auto t = 1.f / settings.subframes * i; // 14
         // auto numbers = interpolate(numbersA, numbersB, t); // 14-22
         auto numbers = interpolate(numbersA, numbersB, settings.ease(t)); // 25
-        auto path = createTempOutFilename(settings.outFilename, i);       // 16
+        auto path = createTempOutFilename(a, i);                          // 16
         std::cout << "write to " << path << "\n";                         // 16
         auto file = std::ofstream{path};                                  // 16
         file << replaceNumbers(contentA, numbers);                        // 18
@@ -237,17 +226,40 @@ int main(int argc, char *argv[]) { // 1
     // end loop
     // block 20
 
-    std::cout << "encoding video..." << std::endl;
-
-    createVideo(settings.outFilename, files);
+    createVideo(settings.outFilename.empty() ? a : settings.outFilename, files);
 
     for (auto &path : files) {
         std::filesystem::remove(path);
     }
 
     std::cout << "done...\n";
-
     // end
+}
+// end interpolate
+// 1
+int main(int argc, char *argv[]) { // 1
+    // block mainA 6
+    const auto settings = Settings{argc, argv};
+    std::cout << "files:\n";
+    for (auto &file : settings.files) {
+        std::cout << file << "\n";
+    }
+
+    if (settings.files.size() < 2) {
+        std::cerr << "need at least 2 files to interpolate between\n";
+        std::exit(1);
+    }
+
+    // interpolateSvgs( // 6-26
+    //     settings.files.front(), settings.files.at(1), settings); // 6-26
+    //  block more 26
+    for (size_t i = 1; i < settings.files.size(); ++i) {
+        auto a = settings.files.at(i - 1);
+        auto b = settings.files.at(i);
+        interpolateSvgs(a, b, settings);
+    }
+    // end more
+    //  end mainA
     return 0; // 1
 } // 1
   // 1

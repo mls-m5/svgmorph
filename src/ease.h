@@ -5,8 +5,8 @@
 
 enum class EaseType {
     Linear,
-    Exp,
     Sine,
+    Exp,
     Elastic,
     Bouncy,
 };
@@ -57,7 +57,7 @@ std::function<float(float)> ease(EaseType type) {
 
 inline EaseType stringToEaseType(std::string_view str) {
     using T = EaseType;
-    if (str == "sine") {
+    if (str == "sine" || str == "sin") {
         return T::Sine;
     }
     if (str == "elastic") {
@@ -70,6 +70,24 @@ inline EaseType stringToEaseType(std::string_view str) {
         return T::Bouncy;
     }
     return T::Linear;
+}
+
+inline std::string_view typeToStr(EaseType type) {
+    using T = EaseType;
+    switch (type) {
+    case T::Linear:
+        return "linear";
+    case T::Exp:
+        return "exp";
+    case T::Sine:
+        return "sine";
+    case T::Elastic:
+        return "elastic";
+    case T::Bouncy:
+        return "bouncy";
+    }
+
+    return "linear";
 }
 
 std::function<float(float)> ease(std::string_view name) {
