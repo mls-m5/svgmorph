@@ -26,7 +26,6 @@ options
 struct Settings {
     // block settingsinner 3
     std::vector<std::filesystem::path> files;
-    bool shouldEnableProfiling = false;
     int subframes = 10;
     std::filesystem::path outFilename = "";
     std::function<float(float)> ease = easeLinear; // 22
@@ -38,10 +37,7 @@ struct Settings {
 
         for (size_t i = 0; i < args.size(); ++i) {
             auto arg = args.at(i);
-            if (arg == "--profile") {
-                shouldEnableProfiling = true;
-            }
-            else if (arg == "--help" || arg == "-h") {
+            if (arg == "--help" || arg == "-h") {
                 std::cout << helpStr << std::endl;
                 std::exit(0);
             }
@@ -196,9 +192,11 @@ void createVideo(std::filesystem::path base,
 
         std::system(command.c_str());
     }
+    std::filesystem::remove(listPath);
 }
 // end
 // block interpolate 8
+
 void interpolateSvgs(std::filesystem::path a,
                      std::filesystem::path b,
                      const Settings &settings) {
@@ -215,7 +213,7 @@ void interpolateSvgs(std::filesystem::path a,
 
     for (int i = 0; i <= settings.subframes; ++i) {
         auto t = 1.f / settings.subframes * i; // 14
-        // auto numbers = interpolate(numbersA, numbersB, t); // 14-22
+        // auto numbers = interpolate(numbersA, numbersB, t); // 14-25
         auto numbers = interpolate(numbersA, numbersB, settings.ease(t)); // 25
         auto path = createTempOutFilename(a, i);                          // 16
         std::cout << "write to " << path << "\n";                         // 16
@@ -240,14 +238,10 @@ void interpolateSvgs(std::filesystem::path a,
 int main(int argc, char *argv[]) { // 1
     // block mainA 6
     const auto settings = Settings{argc, argv};
-    std::cout << "files:\n";
-    for (auto &file : settings.files) {
-        std::cout << file << "\n";
-    }
 
     if (settings.files.size() < 2) {
         std::cerr << "need at least 2 files to interpolate between\n";
-        std::exit(1);
+        return 1;
     }
 
     // interpolateSvgs( // 6-26
