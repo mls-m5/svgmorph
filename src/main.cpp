@@ -47,9 +47,9 @@ struct Settings {
             else if (arg == "--out" || arg == "-o") {
                 outFilename = args.at(++i);
             }
-            else if (arg == "--ease" || arg == "-e") {
-                ease = ::ease(args.at(++i)); // 23
-            }
+            else if (arg == "--ease" || arg == "-e") { // 23
+                ease = ::ease(args.at(++i));           // 23
+            }                                          // 23
             else {
                 files.push_back(arg);
             }
